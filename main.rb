@@ -2,6 +2,7 @@
 
 require 'socket'
 require 'open-uri'
+require 'pp'
 
 class Bot
 
@@ -11,7 +12,7 @@ class Bot
     @username = "PyropoOrbus"
     @password = "quizclub430"
     @admins = [ "WhereIsMySpoon" ]
-    @channels = [ "##p_o_testing", "##procrastination" ]
+    @channels = [ "##p_o_testing" ]
   end
   
   def run
@@ -20,8 +21,7 @@ class Bot
     send("USER WhereIsMySpoon 0 * :WhereIsMySpoon")
     send("PRIVMSG NickServ :identify " + @username + " " + @password)
     sleep 20
-    send("JOIN " + @channels.first)
-    send("JOIN " + @channels[1])
+    @channels.each { |chan| send("JOIN " + chan) }
     send("PRIVMSG " + @channels.first + " :ohai!")
     while line = @irc.gets
       puts line
@@ -36,7 +36,7 @@ class Bot
   #Respond to !quit
   def quit(line)
     channel = get_input_channel(line) #Get the channel that the !quit command was sent from
-    user = line.gsub(/\!.*/, '').gsub(/\!/, '').gsub(/\:/, '').strip #Get the user that sent the !quit command
+    user = get_input_sender(line) #Get the user that sent the !quit command
     if line =~ /.*\!quit.*/ and @admins.include?(user)
       send("PRIVMSG " + channel + " :Goodbye!")
       exit 0
@@ -53,6 +53,10 @@ class Bot
     channel_input_sent_from = line.gsub(/.*PRIVMSG/, '').gsub(/\:.*/, '').strip
   end
   
+  def get_input_sender(line)
+    user = line.gsub(/\!.*/, '').gsub(/\!/, '').gsub(/\:/, '').strip
+  end
+  
   #Respond to PING
   def server_stuff(line)
     if line =~ /PING :.*\.freenode\.net/
@@ -65,10 +69,24 @@ class Bot
     if line =~ /.*youtube.com.*/
       url = line.gsub(/.*\:/, '').gsub(/.*youtube/, 'youtube').strip.gsub(/\ .*/, '')
       puts url
-      page = open("http://www." + url)
-      contents = page.read.gsub(/.*meta name="keywords" content="/m, '').gsub(/".*/m, '').strip
-      puts contents
-      send("PRIVMSG " + channel + " " + url + " - " + contents)
+      begin
+        uri = URI.parse("http://www." + url)
+        page = open(uri)
+        contents = page.read.gsub(/.*meta name="keywords" content="/m, '').gsub(/".*/m, '').strip
+        puts channel + " " + url + " " + contents
+        send("PRIVMSG " + channel + " :http://www." + url + " " + contents)
+      rescue OpenURI::HTTPError => error
+        pp error
+        send("PRIVMSG " + channel + " :This video does not exist.")
+      end
+    end
+  end
+  
+  def get_and_send_file(line)
+    if line =~ /.*:\!getfile.*/
+      user = get_input_sender(line)
+      filename = line.gsub(/.*:\!getfile/, '').strip
+      
     end
   end
   
