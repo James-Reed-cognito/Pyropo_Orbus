@@ -10,7 +10,7 @@ class Bot
     @server = "irc.freenode.net"
     @port = 6667
     @username = "PyropoOrbus"
-    @password = "quizclub430"
+    @password = ""
     @admins = [ "WhereIsMySpoon" ]
     @channels = [ "##p_o_testing" ]
   end
